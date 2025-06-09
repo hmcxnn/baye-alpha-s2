@@ -1,6 +1,7 @@
 # Docker
-Dockerfile
-.dockerignore
+# Dockerfile and .dockerignore are needed for GitHub Actions
+# Dockerfile
+# .dockerignore
 
 # Editor directories and files
 .vscode/
