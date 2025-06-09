@@ -1,0 +1,67 @@
+[
+    {
+        "title": "三国霸业-词典原版",
+        "path": "libs/dat-mod.lib"
+    },
+    {
+        "title": "三国霸业-原版精修",
+        "path": "libs/SGBY-Reset.lib"
+    },
+    {
+        "title": "群魔乱舞-血色华夏",
+        "path": "libs/qmlw-XSHX.lib"
+    },
+    {
+        "title": "群魔乱舞-水浒英豪",
+        "path": "libs/qmlw-SHYH.lib"
+    },
+    {
+        "title": "群魔乱舞-乱战三国",
+        "path": "libs/qmlw-LZSG.lib"
+    },
+    {
+        "title": "无痕修复版",
+        "path": "libs/whxf.lib"
+    },
+    {
+        "title": "平衡版2.0三国战纪",
+        "path": "libs/balance2.01.lib"
+    },
+    {
+        "title": "霸哥自制版",
+        "path": "libs/sc-mod.lib"
+    }
+    ,
+    {
+        "title": "三国战略版",
+        "path": "libs/yhf-mod.lib"
+    }
+    ,
+    {
+        "title": "群友猴子自制版",
+        "path": "libs/hz-mod.lib"
+    }
+     ,
+    {
+        "title": "小君王自制版",
+        "path": "libs/xjw-mod.lib"
+    }
+    ,
+    {
+        "title": "黄豆豆版(手机端)",
+        "path": "https://games.qtjoy.com/test/LYL/sg/082702/index.html",
+        "desc": "libs/hdd.about"
+    }
+    ,
+    {
+        "title": "黄豆豆版(电脑端)",
+        "path": "https://games.qtjoy.com/test/LYL/sg/082901pc/index.html",
+        "desc": "libs/hdd.about"
+    }
+    ,
+    {
+        "title": "测试LIB",
+        "path": "libs/resetTest-mod.lib"
+    }
+]
+

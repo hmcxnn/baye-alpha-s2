@@ -1,0 +1,30 @@
+# Docker
+Dockerfile
+.dockerignore
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Node modules (if any)
+node_modules/
+
+# Build directories
+build/
+dist/

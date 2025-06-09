@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>三国霸业</title>
+    <link rel="icon" href="favicon.png">
+    <link rel="stylesheet" type="text/css" href="css/flex.css"/>
+    <link rel="stylesheet" type="text/css" href="css/baye.css"/>
+    <script>
+        var _hmt = _hmt || [];
+        (function () {
+            var hm = document.createElement("script");
+            hm.src = "//hm.baidu.com/hm.js?55cdc246d0c836cecfdf39ce0d5657f3";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/encoding-indexes.js"></script>
+    <script src="js/encoding.js"></script>
+    <script src="js/sprintf.js"></script>
+    <script src="js/lzma_worker-min.js"></script>
+    <script src="js/base64.js"></script>
+    <style>
+        body {
+            overflow-y: hidden;
+        }
+    </style>
+</head>
+<body style="height: auto;">
+<div layout="row center-center">
+    <div class="container" style="width:480px">
+        <div class="dummy"></div>
+        <div class="element lcd">
+            <canvas class="fill" id="lcd" width="160" height="96">然而你的浏览器并不支持HTML5</canvas>
+        </div>
+    </div>
+</div>
+<p></p>
+<div layout="row center-center">
+    <div style="width:480px">
+        <div layout="row center-stretch">
+            <div layout="column center-left" style="font-size:14px;line-height:140%">
+                <div><h2>按键说明:</h2></div>
+                <div>电脑键盘 -> 电子词典</div>
+                <div>上下左右 -> 上下左右</div>
+                <div>H键 -> 帮助</div>
+                <div>S键 -> 查找</div>
+                <div>回车键 -> 输入</div>
+                <div>空格键 -> 返回</div>
+            </div>
+           
+        </div>
+        <br>
+        <br>
+        <div id="online-save">
+            云存档<span class="online-save-msg"></span>
+            <div class="online-save-slots"></div>
+        </div>
+        <div id="lib-name"></div>
+        <div id="lib-load"></div>
+    </div>
+</div>
+</body>
+</html>
+<script src="js/idbkvstore.min.js?ver=202111140022"></script>
+<script src="js/bridge.js?ver=202111140022"></script>
+<script src="js/lcd.js?ver=202111140022"></script>
+<script src="https://img.bbkgames.com/script/js-sdk.js?ver=202111140022"></script>
+<script>
+    Module.postRun = function () {
+        lcdInit();
+        var libName = getLibName();
+        $("#lib-name").html("当前版本: " + libName);
+        bayeMain();
+    }
+    if (window.FileReader === undefined) {
+        $("#lib-load").html('浏览器不支持载入Lib');
+    } else {
+        $("#lib-load").html('载入Lib: <input type="file" onchange="loadLib(this.files)">');
+    }
+    document.onkeydown = onKeyDown;
+
+    //云存档
+    $(function () {
+        if ('undefined' === typeof BBKSDK) {
+            return;
+        }
+        let $onlineSaveMsg = $('.online-save-msg'), $onlineSaveSlots = $('.online-save-slots');
+
+        //mod
+        let modName = localStorage.getItem('baye/libpath');
+        if (!modName) {
+            $onlineSaveMsg.css({color: 'red'}).text('未选择版本');
+            return;
+        }
+        modName = modName.split('/').pop();
+
+        //上传下载
+        $onlineSaveSlots.on('click', '.upload', function () {
+            let $this = $(this), index = $this.attr('data-index');
+            let localSave0 = localStorage.getItem('baye//data//sango' + (index * 2 - 2) + '.sav')
+            let localSave1 = localStorage.getItem('baye//data//sango' + (index * 2 - 1) + '.sav')
+            let data = localSave0 + '\n' + localSave1
+            $this.prop('disabled', true);
+            BBKSDK.uploadSave('baye', modName, index, data, function (res) {
+                $this.prop('disabled', false);
+                let data = JSON.parse(res);
+                if (data && 'undefined' !== typeof data.code) {
+                    if (0 === data.code) {
+                        alert('上传成功');
+                        $this.parent().find('.save-time').text(`时间: ${data.msg || ''}`);
+                        $this.parent().find('.download').prop('disabled', false).attr('data-url', data.data);
+                    } else {
+                        alert(`上传失败: ${data.msg}`);
+                    }
+                } else {
+                    alert(`上传失败`);
+                }
+            });
+        });
+        $onlineSaveSlots.on('click', '.download', function () {
+            let $this = $(this), index = $this.attr('data-index'), url = $this.attr('data-url');
+            $this.prop('disabled', true);
+            BBKSDK.getSave(url, function (res) {
+                $this.prop('disabled', false);
+                let arr = res.split('\n');
+                if (2 !== arr.length) {
+                    alert('存档不存在或已损坏');
+                    return;
+                }
+                //todo sav.lib有点硬编码
+                localStorage.setItem('baye//data//sango' + (index * 2 - 2) + '.sav.lib', "libs/" + modName);
+                localStorage.setItem('baye//data//sango' + (index * 2 - 1) + '.sav.lib', "libs/" + modName);
+                localStorage.setItem('baye//data//sango' + (index * 2 - 2) + '.sav', arr[0]);
+                localStorage.setItem('baye//data//sango' + (index * 2 - 1) + '.sav', arr[1]);
+                alert('导入成功');
+                $this.parent().find('.upload').prop('disabled', false);
+            });
+        });
+
+        //登录用户
+        BBKSDK.getUserInfo(function (res) {
+            if (!res) {
+                return;
+            }
+            if (!res.nickname) {
+                //未登录
+                $onlineSaveMsg.css({color: 'red'}).text('未登录');
+                return;
+            }
+            //save_dir
+            if (!res.sav_dir) {
+                $onlineSaveMsg.css({color: 'red'}).text('未找到存档dir, 请联系开发者');
+                return;
+            }
+
+            //todo 当前硬编码3个存档位 baye的一个存档包含两个string
+
+            //渲染基本dom和本地存档按钮
+            for (let i = 0; i < 3; i++) {
+                let $item = $(`<div>
+    <span class="save-name"></span>
+    <button type="button" class="upload" disabled>上传</button>
+    <button type="button" class="download" disabled>下载</button>
+    <span class="save-time"></span>
+</div>`);
+                $item.find('.save-name').text(`存档-${i + 1}`);
+                //本地存档
+                let localSaveLib0 = localStorage.getItem('baye//data//sango' + (i * 2) + '.sav.lib');
+                let localSaveLib1 = localStorage.getItem('baye//data//sango' + (i * 2 + 1) + '.sav.lib');
+                let localSave0 = localStorage.getItem('baye//data//sango' + (i * 2) + '.sav');
+                let localSave1 = localStorage.getItem('baye//data//sango' + (i * 2 + 1) + '.sav');
+
+                //本地是否有此mod的存档
+                let hasLocalSave = false;
+                if (localSave0 && localSave1 && localSaveLib0 && localSaveLib1
+                    && localSaveLib0 === localSaveLib1 && localSaveLib0.split('/').pop() === modName) {
+                    hasLocalSave = true;
+                }
+                if (hasLocalSave) {
+                    //本地有
+                    $item.find('.upload').prop('disabled', false).attr('data-index', i + 1);
+                }
+                $onlineSaveSlots.append($item);
+            }
+
+            //加载线上存档index
+            BBKSDK.getSaveIndex('baye', res.sav_dir, function (res) {
+                let slots = {};
+                if (res.length > 0) {
+                    for (let i = 0; i < res.length; i++) {
+                        hasData = true;
+                        let item = res[i];
+                        if ('baye' === item.game && modName === item.mod_name) {
+                            slots[item.index] = item;
+                        }
+                    }
+                }
+                //开始渲染
+                for (let i = 0; i < 3; i++) {
+                    let $item = $onlineSaveSlots.children().eq(i);
+                    //线上存档
+                    let data = slots[i + 1];
+                    if ('undefined' !== typeof data) {
+                        //线上有
+                        $item.find('.download').prop('disabled', false).attr('data-index', i + 1).attr('data-url', data.file);
+                        $item.find('.save-time').text(`时间: ${data.time || ''}`);
+                    }
+                }
+            });
+        });
+    });
+</script>
+<script src="js/baye.js?ver=202111140022"></script>
+

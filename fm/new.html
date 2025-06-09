@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="icon_128x128.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon_128x128.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" id="viewport"
+          name="viewport">
+    <meta charset="UTF-8">
+    <title>FM Engine</title>
+    <style>
+        html, body, div {
+            background: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #wrapper {
+            position: relative;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gamebox {
+            width: 720px;
+            height: 432px;
+        }
+    </style>
+</head>
+<body>
+<!-- 游戏窗口 -->
+<div id="wrapper">
+    <canvas id="gamebox" width="464" height="288"></canvas>
+</div>
+
+<div id="key-map" style="display: none">
+    <p>
+        按键:<br>
+        上: W/↑<br>
+        下: S/↓<br>
+        左: A/←<br>
+        右: D/→<br>
+        上翻页: PageUp/Q<br>
+        下翻页: PageDown/E<br>
+        菜单/退出: Esc<br>
+        确认: Enter/空格
+    </p>
+</div>
+
+<script src="fm-sdk.1.0.0.min.js?v=8"></script>
+<script>
+    let dom = document.getElementById('gamebox');
+    let sdk = new FmSdk(dom);
+</script>
+
+<script type="module">
+    import init, {load_res, new_game} from "./fm.js?v=8";
+
+    await init();
+
+    sdk.init(load_res, new_game);
+</script>
+
+</body>
+</html>

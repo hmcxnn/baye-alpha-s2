@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>导出存档网址</title>
+    <link rel="stylesheet" type="text/css" href="css/baye.css?ver=1" />
+    <link rel="icon" href="favicon.png">
+    <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" id="viewport" name="viewport">
+    <style>
+        .btn.menu {
+            margin-bottom: 2px;
+        }
+        #cover {
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            z-index: 999;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+    </style>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/lzma_worker-min.js"></script>
+    <script src="js/base64.js"></script>
+    <script src="js/idbkvstore.min.js?ver=202111140022"></script>
+    <script src="js/lcd.js?ver=202111140022"></script>
+    <script src="js/spin.min.js"></script>
+    <script>
+        var kvstore_url = "https://store.kvin.wang/kvstore";
+        var opts = {
+              lines: 13 // The number of lines to draw
+            , length: 28 // The length of each line
+            , width: 14 // The line thickness
+            , radius: 42 // The radius of the inner circle
+            , scale: 1 // Scales overall size of the spinner
+            , corners: 1 // Corner roundness (0..1)
+            , color: '#000' // #rgb or #rrggbb or array of colors
+            , opacity: 0.25 // Opacity of the lines
+            , rotate: 0 // The rotation offset
+            , direction: 1 // 1: clockwise, -1: counterclockwise
+            , speed: 1 // Rounds per second
+            , trail: 60 // Afterglow percentage
+            , fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+            , zIndex: 2e9 // The z-index (defaults to 2000000000)
+            , className: 'spinner' // The CSS class to assign to the spinner
+            , top: '50%' // Top position relative to parent
+            , left: '50%' // Left position relative to parent
+            , shadow: true // Whether to render a shadow
+            , hwaccel: true // Whether to use hardware acceleration
+            , position: 'absolute' // Element positioning
+        };
+        var spinner = new Spinner(opts);
+
+        function filename(n) {
+            return "baye//data//sango" + n + ".sav";
+        }
+
+        function getfile(n) {
+            return localStorage[filename(n)];
+        }
+
+        function dump(n) {
+            return JSON.stringify({
+                "name": localStorage[filename(n) + '.name'],
+                "lib": localStorage[filename(n) + '.lib'],
+                "sav0": getfile(n*2),
+                "sav1": getfile(n*2+1),
+                "ua": window.navigator.userAgent,
+            })
+        }
+
+        function relPathToAbs(sRelPath) {
+            var nUpLn, sDir = "", sPath = location.pathname.replace(/[^\/]*$/, sRelPath.replace(/(\/|^)(?:\.?\/+)+/g, "$1"));
+            for (var nEnd, nStart = 0; nEnd = sPath.indexOf("/../", nStart), nEnd > -1; nStart = nEnd + nUpLn) {
+                nUpLn = /^\/(?:\.\.\/)*/.exec(sPath.slice(nEnd))[0].length;
+                sDir = (sDir + sPath.substring(nStart, nEnd)).replace(new RegExp("(?:\\\/+[^\\\/]*){0," + ((nUpLn - 1) / 3) + "}$"), "/");
+            }
+            var pathname = sDir + sPath.substr(nStart);
+
+            var site = window.location.protocol + "//" + window.location.hostname;
+            if (window.location.port.length > 0) {
+                site += ":" + window.location.port;
+            }
+            return site + pathname;
+        }
+
+        function upload(n) {
+            var self = $(this);
+
+            var data = dump(n);
+
+            if (data.length < 2000) {
+                $("#tip").html("该存档为空!");
+                $("#data").val("");
+                return;
+            }
+
+            if ($("#use-short-url").val() == '1') {
+                spinStart();
+                $("#cover")
+                $.post(kvstore_url, data, function(resp) {
+                    spinStop();
+                    $("#tip").html("云码:");
+                    $("#data").val(resp.token);
+                })
+                .fail(function(e) {
+                    spinStop();
+                    $("#tip").html('上传云端失败 Error: ' + e.statusCode().status);
+                });
+            } else {
+                $("#tip").html("全选复制下列Hex码:");
+                $("#data").val(data);
+            }
+        }
+
+        function loadSav(data) {
+            function load(data) {
+                if (data[0] == '{') {
+                    var info = JSON.parse(data);
+                    localStorage[filename(6)] = info["sav0"];
+                    localStorage[filename(6+1)] = info["sav1"];
+                    localStorage[filename(6) + ".lib"] = info["lib"];
+                    localStorage[filename(6+1) + ".lib"] = info["lib"];
+                } else {
+                    var tuple = data.split("/");
+                    var len = tuple[0];
+                    var hex = tuple[1];
+                    if (!len || !hex || hex.length != len) {
+                        throw "存档已损坏";
+                    } else {
+                        var tuple = hex.split("_");
+                        localStorage[filename(6)] = tuple[0];
+                        localStorage[filename(6+1)] = tuple[1];
+                    }
+                }
+            }
+
+            function loadOrErr(data) {
+                try {
+                    load(data);
+                    $("#tip").html("存档已载入到第4个存档位");
+                } catch(e) {
+                    $("#tip").html("<div style='color: red;'>载入失败: " + e + "</div>");
+                }
+            }
+
+            if (data) {
+                if (data.length < 100 && data.includes('-')) {
+                    spinStart();
+                    $.get(kvstore_url + "/" + data, function(resp) {
+                        spinStop();
+                        loadOrErr(resp.data);
+                        $("#data").val(resp.data);
+                    }).fail(function(x) {
+                        spinStop();
+                        $("#tip").html("<div style='color: red;'>载入失败 Error:" + x.statusCode().status + "</div>");
+                    });
+                } else {
+                    loadOrErr(data);
+                }
+            } else {
+                $("#tip").html("<div style='color: red;'>载入失败</div>");
+            }
+        }
+        function loadInput() {
+            var url = $("#data").val();
+            if (url && url.length) {
+                loadSav(url);
+            }
+        }
+        function spinStart() {
+            spinner.spin(document.body);
+            $("#cover").show();
+        }
+        function spinStop() {
+            spinner.stop();
+            $("#cover").hide();
+        }
+    </script>
+</head>
+<body>
+
+    <div >
+        <div id="lib-name"></div>
+        <div id="tip"></div>
+        <textarea id="data" rows=5 style='width: 100%;' placeholder="贴入Hex码或云码"></textarea>
+    </div>
+
+    <div class="container" style="margin-top:10px">
+        <button class="btn menu" type="button" onclick="upload(0)">导出存档1</button>
+        <button class="btn menu" type="button" onclick="upload(1)">导出存档2</button>
+        <button class="btn menu" type="button" onclick="upload(2)">导出存档3</button>
+    </div>
+    <div class="config-item">
+        导出模式:
+        <select name="" id="use-short-url">
+            <option value="0">Hex码</option>
+            <option value="1" selected="selected">云码</option>
+        </select>
+    </div>
+
+    <div class="container" style="margin-top:20px">
+        <button class="btn menu" type="button" onclick="loadInput()">导入存档</button>
+    </div>
+    <div class="container" style="margin-top:2px">
+        <button class="btn menu" type="button" onclick="location='index.html';">返回游戏</button>
+    </div>
+    <div id="cover"></div>
+</body>
+</html>
