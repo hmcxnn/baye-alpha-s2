@@ -1,3 +1,4 @@
+原项目地址：https://gitee.com/bgwp/baye-alpha
 # 三国霸业
 步步高电子词典经典游戏 - 三国霸业的H5移植版本
 
